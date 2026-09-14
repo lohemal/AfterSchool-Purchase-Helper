@@ -11,6 +11,8 @@
     "app": "tauri dev",
     "app:build": "tauri build",
     "version:set": "node scripts/set-version.mjs",
+    "check:release": "node scripts/check-release.mjs",
+    "release:prepare": "node scripts/make-release.mjs",
     "check:public": "node scripts/check-public-safe.mjs",
     "check:version": "node scripts/check-version.mjs",
     "check:ime": "node --experimental-strip-types --no-warnings scripts/check-ime.ts",

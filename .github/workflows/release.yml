@@ -63,49 +63,15 @@ jobs:
         run: npm run tauri build
 
       # 앱 이름이 한글이라 만들어진 파일 이름도 한글이다. GitHub 릴리스는 첨부
-      # 파일 이름에서 한글을 떼어 내므로 여기서 영문 이름으로 복사해 둔다.
-      # 앱이 사용자에게 보이는 이름은 그대로 한글이다.
+      # 파일 이름에서 한글을 떼어 내므로 영문 이름으로 복사하고 latest.json 도
+      # 그 이름을 가리키게 한다. PowerShell 은 한글을 깨뜨린 적이 있어 Node 로 만든다.
       - name: 파일 이름 정리 · latest.json 만들기
-        shell: pwsh
-        run: |
-          $ver = "${{ github.ref_name }}".TrimStart('v')
-          $dir = "src-tauri/target/release/bundle/nsis"
-          $exe = Get-ChildItem "$dir/*_x64-setup.exe" | Select-Object -First 1
-          if (-not $exe) { throw "설치 파일을 찾지 못했습니다: $dir" }
+        run: node scripts/make-release.mjs $(echo "${{ github.ref_name }}" | sed 's/^v//') ${{ github.repository }}
+        shell: bash
 
-          $sigPath = "$($exe.FullName).sig"
-          if (-not (Test-Path $sigPath)) {
-            throw "서명 파일이 없습니다. TAURI_SIGNING_PRIVATE_KEY 시크릿을 확인하세요."
-          }
-          $sig = (Get-Content $sigPath -Raw).Trim()
-          if ([string]::IsNullOrWhiteSpace($sig)) { throw "서명이 비어 있습니다." }
-
-          $out = "release"
-          New-Item -ItemType Directory -Force $out | Out-Null
-          $name = "afterschool-purchase-helper_${ver}_x64-setup.exe"
-          Copy-Item $exe.FullName "$out/$name"
-          Copy-Item $sigPath      "$out/$name.sig"
-
-          # 업데이터가 읽는 파일. 여기 url 이 실제 첨부 파일 주소와 같아야 한다.
-          $json = [ordered]@{
-            version   = $ver
-            notes     = "자세한 변경 내용은 릴리스 페이지를 확인해 주세요."
-            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-            platforms = [ordered]@{
-              "windows-x86_64" = [ordered]@{
-                signature = $sig
-                url       = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$name"
-              }
-            }
-          }
-          # BOM 이 있으면 업데이터가 읽지 못한다
-          $json | ConvertTo-Json -Depth 6 | Set-Content "$out/latest.json" -Encoding utf8NoBOM
-
-          $hash = (Get-FileHash "$out/$name" -Algorithm SHA256).Hash.ToLower()
-          "$hash  $name" | Set-Content "$out/SHA256SUMS.txt" -Encoding utf8NoBOM
-
-          Write-Host "만들어진 파일:"
-          Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)  $($_.Length) bytes" }
+      # 올리기 전에 서명이 앱의 공개 키와 짝인지 실제로 검증한다
+      - name: 서명·파일명·버전 검증
+        run: npm run check:release
 
       - name: 릴리스 올리기
         env:
