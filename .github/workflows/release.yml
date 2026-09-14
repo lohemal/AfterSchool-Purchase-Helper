@@ -1,0 +1,146 @@
+name: 릴리스 만들기
+
+# 버전 태그를 올리면 설치 파일을 만들어 릴리스에 올린다.
+#
+#   npm run version:set 0.2.0
+#   git add . && git commit -m "v0.2.0"
+#   git tag v0.2.0 && git push origin main --tags
+#
+# 손으로 돌리려면 Actions 탭에서 [Run workflow] 를 눌러도 된다.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # 이 프로그램은 Windows 전용이다 (한글 COM · Windows 내장 글자 인식)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rust 준비
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust 빌드 캐시
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: 의존성 설치
+        run: npm ci
+
+      # 여기서 막히면 릴리스가 만들어지지 않는다.
+      - name: 버전이 세 곳에서 같은지
+        run: npm run check:version
+
+      - name: 타입 검사 · 화면 빌드
+        run: npm run build
+
+      - name: 계산 규칙 검사
+        run: npm run check:model
+
+      # 실제 업무 샘플은 저장소에 없다. 그 시험들은 스스로 건너뛴다.
+      - name: 서버 시험
+        run: cargo test --lib
+        working-directory: src-tauri
+
+      - name: 설치 파일 만들기 · 서명
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npm run tauri build
+
+      # 앱 이름이 한글이라 만들어진 파일 이름도 한글이다. GitHub 릴리스는 첨부
+      # 파일 이름에서 한글을 떼어 내므로 여기서 영문 이름으로 복사해 둔다.
+      # 앱이 사용자에게 보이는 이름은 그대로 한글이다.
+      - name: 파일 이름 정리 · latest.json 만들기
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart('v')
+          $dir = "src-tauri/target/release/bundle/nsis"
+          $exe = Get-ChildItem "$dir/*_x64-setup.exe" | Select-Object -First 1
+          if (-not $exe) { throw "설치 파일을 찾지 못했습니다: $dir" }
+
+          $sigPath = "$($exe.FullName).sig"
+          if (-not (Test-Path $sigPath)) {
+            throw "서명 파일이 없습니다. TAURI_SIGNING_PRIVATE_KEY 시크릿을 확인하세요."
+          }
+          $sig = (Get-Content $sigPath -Raw).Trim()
+          if ([string]::IsNullOrWhiteSpace($sig)) { throw "서명이 비어 있습니다." }
+
+          $out = "release"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $name = "afterschool-purchase-helper_${ver}_x64-setup.exe"
+          Copy-Item $exe.FullName "$out/$name"
+          Copy-Item $sigPath      "$out/$name.sig"
+
+          # 업데이터가 읽는 파일. 여기 url 이 실제 첨부 파일 주소와 같아야 한다.
+          $json = [ordered]@{
+            version   = $ver
+            notes     = "자세한 변경 내용은 릴리스 페이지를 확인해 주세요."
+            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{
+                signature = $sig
+                url       = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$name"
+              }
+            }
+          }
+          # BOM 이 있으면 업데이터가 읽지 못한다
+          $json | ConvertTo-Json -Depth 6 | Set-Content "$out/latest.json" -Encoding utf8NoBOM
+
+          $hash = (Get-FileHash "$out/$name" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $name" | Set-Content "$out/SHA256SUMS.txt" -Encoding utf8NoBOM
+
+          Write-Host "만들어진 파일:"
+          Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)  $($_.Length) bytes" }
+
+      - name: 릴리스 올리기
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $ver = $tag.TrimStart('v')
+          $notes = @"
+          ## 설치 방법
+
+          아래 ``afterschool-purchase-helper_${ver}_x64-setup.exe`` 를 내려받아 실행하세요.
+          관리자 권한이 필요 없습니다.
+
+          > Windows 가 "PC를 보호했습니다" 창을 띄우면 **추가 정보 → 실행** 을 누르세요.
+          > 코드 서명 인증서가 없는 프로그램은 모두 이렇게 나옵니다.
+
+          이미 쓰고 계신 분은 프로그램을 켜면 새 버전 알림이 뜹니다.
+
+          ## 자료는 그대로 남습니다
+
+          자료는 프로그램과 따로 ``%APPDATA%\kr.school.afterschool-purchase-helper`` 에 있습니다.
+          업데이트해도, 프로그램을 지웠다 다시 깔아도 그대로입니다.
+
+          ## 첨부 파일
+
+          | 파일 | 무엇인가요 |
+          |---|---|
+          | ``afterschool-purchase-helper_….exe`` | 설치 파일. 이것만 받으면 됩니다 |
+          | ``afterschool-purchase-helper_….exe.sig`` | 서명. 프로그램이 업데이트할 때 확인합니다 |
+          | ``latest.json`` | 업데이트 정보. 프로그램이 읽습니다 |
+          | ``SHA256SUMS.txt`` | 내려받은 파일이 온전한지 확인용 |
+          "@
+
+          # 같은 태그로 다시 돌릴 때를 대비해, 있으면 지우고 새로 만든다
+          gh release delete $tag --yes 2>$null
+          gh release create $tag (Get-ChildItem release | ForEach-Object { $_.FullName }) `
+            --title "방과후 품의 도우미 $tag" --notes $notes

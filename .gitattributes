@@ -1,0 +1,14 @@
+# 줄바꿈은 저장소에 LF 로 두고, 받는 쪽에서 알아서 맞춘다.
+# 이것이 없으면 Windows 에서 파일 전체가 바뀐 것처럼 보인다.
+* text=auto eol=lf
+
+# 이진 파일은 건드리지 않는다
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.xlsx binary
+*.hwp binary
+*.hwpx binary

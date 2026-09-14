@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────
+# 공개 저장소 기준. **실제 업무 자료와 비밀 정보는 절대 올라가면 안 된다.**
+# .gitignore 만 믿지 말고 `git status` · `git ls-files` 로 한 번 더 확인한다.
+# ─────────────────────────────────────────────────────────────
+
+# 실제 업무 샘플 — 거래처 개인정보와 학교 회계 자료가 들어 있다
+test/fixtures-local/
+
+# 시험 산출물 (실제 금액이 든 품의 파일·자료 파일·변환본이 섞인다)
+test/out/
+
+# 사용자 자료
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# 만들어진 품의 파일
+*.xlsx
+*.xls
+*.xlsm
+# 단, 저장소에 일부러 넣는 공개용 견본이 생기면 여기서 풀어 준다
+# !test/fixtures-public/*.xlsx
+
+# 실제 견적서로 올 수 있는 형식
+*.hwp
+*.hwpx
+*.pdf
+*.jpg
+*.jpeg
+# 화면 아이콘은 저장소에 있어야 한다
+*.png
+!src-tauri/icons/**/*.png
+
+# 서명 키·인증서·비밀 정보
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.cer
+.env
+.env.*
+secrets.json
+
+# 빌드 산출물
+node_modules/
+dist/
+target/
+probe/target/
+src-tauri/target/
+src-tauri/gen/
+release/
+
+# 로그·임시
+*.log
+logs/
+tmp/
+.DS_Store
+Thumbs.db
+
+# 편집기
+.vscode/
+.idea/
+*.swp

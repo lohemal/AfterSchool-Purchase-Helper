@@ -1,0 +1,41 @@
+[package]
+name = "quotemgr-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# P0 탐침 전용 crate. 본 프로그램(P1)이 아니다.
+# 기술적으로 위험한 부분이 실제 Rust 환경에서 도는지만 확인한다.
+
+[lib]
+name = "probe"
+path = "src/lib.rs"
+
+[dependencies]
+calamine = { version = "0.36", features = ["dates"] }
+rust_xlsxwriter = "0.99"
+zip = { version = "8", default-features = false, features = ["deflate"] }
+quick-xml = "0.42"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+
+[dependencies.windows]
+version = "0.61"
+features = [
+  "Win32_Foundation",
+  "Win32_System_Com",
+  # VARIANT <-> BSTR/문자열 변환(extensions/Win32/System/Variant.rs)이 이 기능에 걸려 있다.
+  # 빠뜨리면 `BSTR::try_from(&VARIANT)` 와 `VARIANT: Display` 가 없다고 나온다.
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
+  "Media_Ocr",
+  "Globalization",
+  "Graphics_Imaging",
+  "Storage",
+  "Storage_Streams",
+  "Foundation",
+  "Foundation_Collections",
+]
+
+[profile.dev]
+opt-level = 0

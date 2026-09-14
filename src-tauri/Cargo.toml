@@ -1,0 +1,69 @@
+[package]
+name = "afterschool-purchase-helper"
+version = "0.1.0"
+description = "방과후 품의 도우미"
+authors = ["lohemal"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "afterschool_purchase_helper_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+log = "0.4"
+
+# 파일 형식 (P0 에서 검증한 조합)
+calamine = { version = "0.36", features = ["dates"] }
+rust_xlsxwriter = "0.99"
+zip = { version = "8", default-features = false, features = ["deflate"] }
+quick-xml = "0.42"
+
+# P2 텍스트 PDF — 문자와 좌표를 함께 뽑는다 (OutputDev)
+pdf-extract = "0.12"
+# 스캔 PDF 의 내장 이미지도 pdf-extract 가 재수출하는 lopdf 로 꺼낸다
+# (판이 갈리면 Document 타입이 달라져 서로 못 넘긴다)
+# P3 이미지 전처리 (3배 확대)
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "bmp", "tiff"] }
+sha2 = "0.10"
+
+[dependencies.windows]
+version = "0.61"
+features = [
+  "Win32_Foundation",
+  "Win32_System_Com",
+  # VARIANT <-> BSTR 변환이 이 기능에 걸려 있다 (P0-4 에서 확인)
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
+  # P3 이미지 OCR (WinRT)
+  "Media_Ocr",
+  "Globalization",
+  "Graphics_Imaging",
+  "Storage",
+  "Storage_Streams",
+  "Foundation",
+  "Foundation_Collections",
+]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+[dev-dependencies]
+tempfile = "3"

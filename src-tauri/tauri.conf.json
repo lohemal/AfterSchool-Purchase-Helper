@@ -1,0 +1,72 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "방과후 품의 도우미",
+  "mainBinaryName": "afterschool-purchase-helper",
+  "version": "0.1.0",
+  "identifier": "kr.school.afterschool-purchase-helper",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "방과후 품의 도우미",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "resizable": true,
+        "center": true,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "languages": [
+          "Korean"
+        ],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      }
+    },
+    "createUpdaterArtifacts": true,
+    "publisher": "lohemal",
+    "copyright": "Copyright © 2026 lohemal",
+    "homepage": "https://github.com/lohemal/AfterSchool-Purchase-Helper",
+    "shortDescription": "방과후 교재비·재료비 품의 자동 작성",
+    "longDescription": "거래처마다 형식이 다른 견적서를 읽어 품목을 뽑고, 정산자료와 맞춰 본 뒤 에듀파인 업로드용 품의 파일을 만듭니다. 자료는 이 컴퓨터에만 저장됩니다.",
+    "category": "Education"
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/lohemal/AfterSchool-Purchase-Helper/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQyMjIwNjFGRDQzMDY1QTgKUldTb1pURFVId1lpUXB0S0NqQ1FlOEJCcytsSmlTVGlCZ2w3KzN5Q2dxMzZUSTYxNGxzTzc1NTIK",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
