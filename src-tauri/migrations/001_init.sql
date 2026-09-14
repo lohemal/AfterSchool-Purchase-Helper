@@ -31,7 +31,7 @@ CREATE TABLE vendor_unit (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   department_id INTEGER NOT NULL REFERENCES department(id) ON DELETE CASCADE,
   mgmt_name     TEXT    NOT NULL UNIQUE,          -- '로봇과학1'
-  vendor_name   TEXT,                             -- '(주)주산과암산' (선택, 참고용)
+  vendor_name   TEXT,                             -- '(주)가나상사' (선택, 참고용)
   note          TEXT,
   sort_order    INTEGER NOT NULL DEFAULT 0,
   active        INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1))
