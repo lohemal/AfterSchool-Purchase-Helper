@@ -63,7 +63,7 @@
       "endpoints": [
         "https://github.com/lohemal/AfterSchool-Purchase-Helper/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQyMjIwNjFGRDQzMDY1QTgKUldTb1pURFVId1lpUXB0S0NqQ1FlOEJCcytsSmlTVGlCZ2w3KzN5Q2dxMzZUSTYxNGxzTzc1NTIK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJCNzBGOTBENTFBQ0Q1Q0IKUldUTDFheFJEZmx3dTlaeFNYcGRNTjdhWDFzK0FOV0VNOWljZkUwTXJYSlIwMm1TMzRqSTFCdEsK",
       "windows": {
         "installMode": "passive"
       }
