@@ -32,6 +32,21 @@ fn schema_is_current() {
     assert_eq!(db.schema_version().unwrap(), migrate::latest_version());
 }
 
+/// **v0.1.0 이 만든 자료를 그대로 연다.**
+///
+/// v0.1.1 은 작업 이름 바꾸기·지우기만 더했고 표를 하나도 바꾸지 않았다.
+/// 그래서 자료 구조 번호가 v0.1.0 때와 같아야 하고, 올려 줄 일도 없다.
+/// 이 줄이 깨졌다면 마이그레이션을 새로 만들어야 한다는 뜻이다
+/// (`migrations/00N_….sql` 을 더하고 이 숫자를 고친다).
+#[test]
+fn schema_is_unchanged_since_v0_1_0() {
+    assert_eq!(
+        migrate::latest_version(),
+        2,
+        "자료 구조가 바뀌었습니다. 쓰던 사람의 DB 를 올려 줄 마이그레이션이 필요합니다."
+    );
+}
+
 #[test]
 fn department_with_aliases_and_vendors() {
     let db = memory_db();

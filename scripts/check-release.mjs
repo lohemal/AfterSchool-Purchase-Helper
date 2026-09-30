@@ -1,13 +1,21 @@
 /**
  * 릴리스 산출물이 서로 맞는지 확인한다.
  *
- *   npm run check:release
+ *   npm run check:release          # package.json 의 버전
+ *   npm run check:release 0.1.1    # 버전을 직접 대고 싶을 때
  *
  * 앱이 들고 있는 공개 키로 설치 파일의 서명을 실제로 검증한다.
  * Tauri updater 가 하는 일과 같다 (minisign / ed25519).
+ *
+ * 파일 이름에 버전이 들어가므로 **지금 만드는 판의 버전**을 써야 한다.
+ * 버전을 박아 두면 판을 올린 뒤에도 옛 파일을 검사하고 「통과」라고 말한다.
  */
 import { readFileSync } from 'node:fs'
 import { createHash, verify } from 'node:crypto'
+
+const version = process.argv[2] ?? JSON.parse(readFileSync('package.json', 'utf8')).version
+const setupPath = `release/afterschool-purchase-helper_${version}_x64-setup.exe`
+console.log('검사 대상       :', setupPath)
 
 const conf = JSON.parse(readFileSync('src-tauri/tauri.conf.json', 'utf8'))
 const pubB64 = conf.plugins.updater.pubkey
@@ -18,7 +26,7 @@ const alg = pubRaw.subarray(0, 2).toString('latin1')
 const keyId = pubRaw.subarray(2, 10)
 const pubKey = pubRaw.subarray(10, 42)
 
-const sigTxt = Buffer.from(readFileSync('release/afterschool-purchase-helper_0.1.0_x64-setup.exe.sig', 'utf8').trim(), 'base64').toString('utf8')
+const sigTxt = Buffer.from(readFileSync(`${setupPath}.sig`, 'utf8').trim(), 'base64').toString('utf8')
 const sigLines = sigTxt.split('\n')
 const sigRaw = Buffer.from(sigLines[1].trim(), 'base64')  // [2]alg [8]key_id [64]sig
 const sigAlg = sigRaw.subarray(0, 2).toString('latin1')
@@ -29,7 +37,7 @@ console.log('공개 키 알고리즘 :', JSON.stringify(alg), alg === 'Ed' ? '(e
 console.log('서명   알고리즘 :', JSON.stringify(sigAlg))
 console.log('키 ID 일치      :', keyId.equals(sigKeyId) ? '예' : '아니오 ← 다른 키로 서명됐다')
 
-const file = readFileSync('release/afterschool-purchase-helper_0.1.0_x64-setup.exe')
+const file = readFileSync(setupPath)
 // 'Ed' = prehashed: BLAKE2b-512 로 먼저 해시한 뒤 서명한다
 const { blake2b512 } = await import('node:crypto').then(m => ({ blake2b512: () => m.createHash('blake2b512') }))
 const digest = blake2b512().update(file).digest()

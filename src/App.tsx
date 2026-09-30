@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import * as ipc from './ipc'
 import type { CheckRow, Work } from './ipc/types'
 import UpdateBanner from './components/UpdateBanner'
+import WorkPicker from './components/WorkPicker'
 import SetupStep from './steps/SetupStep'
 import QuotesStep from './steps/QuotesStep'
 import ReviewStep from './steps/ReviewStep'
@@ -29,11 +30,22 @@ export default function App() {
   const [checks, setChecks] = useState<CheckRow[]>([])
   const [error, setError] = useState('')
 
-  const refreshWorks = useCallback(async () => {
+  /**
+   * 작업 목록을 다시 읽는다.
+   *
+   * `select` 를 주면 그 작업을 고른다(방금 만들었거나 이름을 바꾼 작업).
+   * 주지 않거나 목록에 없으면 보고 있던 작업을 그대로 두고,
+   * 그것마저 사라졌으면 맨 위 작업으로 간다.
+   */
+  const refreshWorks = useCallback(async (select?: number | null) => {
     try {
       const list = await ipc.listWorks()
       setWorks(list)
-      setWorkId((cur) => (cur !== null && list.some((w) => w.id === cur) ? cur : list[0]?.id ?? null))
+      setWorkId((cur) => {
+        if (select != null && list.some((w) => w.id === select)) return select
+        if (cur !== null && list.some((w) => w.id === cur)) return cur
+        return list[0]?.id ?? null
+      })
     } catch (e) {
       setError(ipc.errorMessage(e))
     }
@@ -58,20 +70,13 @@ export default function App() {
   const errorCount = checks.filter((c) => c.status === 'error' && !c.acknowledged).length
   const warnCount = checks.filter((c) => c.status === 'warn').length
 
-  async function newWork() {
-    const now = new Date()
-    const year = now.getMonth() + 1 >= 3 ? now.getFullYear() : now.getFullYear() - 1
-    const schoolYear = `${year}학년도`
-    const month = `${now.getMonth() + 1}월`
-    const title = `${schoolYear} ${month} 교재비`
-    try {
-      const id = await ipc.createWork(title, schoolYear, month, '교재비')
-      await refreshWorks()
-      setWorkId(id)
-      setStep('quotes')
-    } catch (e) {
-      setError(ipc.errorMessage(e))
-    }
+  /** 작업을 만들거나·이름을 바꾸거나·지운 뒤 목록을 다시 읽는다 */
+  async function afterWorkChange(action: 'created' | 'renamed' | 'deleted', id: number | null) {
+    await refreshWorks(id)
+    // 새로 만들었으면 바로 견적서 등록으로 넘어간다.
+    // 지웠을 때는 보던 단계에 그대로 둔다 — 남은 작업이 있으면 그 작업을 이어서 보고,
+    // 하나도 없으면 「먼저 작업을 만들어 주세요」가 나온다.
+    if (action === 'created' && id !== null) setStep('quotes')
   }
 
   const work = works.find((w) => w.id === workId) ?? null
@@ -81,25 +86,13 @@ export default function App() {
       <nav className="sidebar">
         <h1>방과후 품의 도우미</h1>
 
-        <div className="work-pick">
-          <label className="field">
-            작업
-            <select
-              value={workId ?? ''}
-              onChange={(e) => setWorkId(e.target.value === '' ? null : Number(e.target.value))}
-            >
-              {works.length === 0 && <option value="">작업 없음</option>}
-              {works.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="small" style={{ marginTop: 6, width: '100%' }} onClick={newWork}>
-            새 작업 만들기
-          </button>
-        </div>
+        <WorkPicker
+          works={works}
+          workId={workId}
+          onSelect={setWorkId}
+          onChanged={afterWorkChange}
+          onError={setError}
+        />
 
         <ul className="steps">
           {STEPS.map((s, i) => {

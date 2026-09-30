@@ -267,3 +267,44 @@ tr.look td:first-child { box-shadow: inset 3px 0 0 var(--check); }
   background: var(--accent-soft);
   font-size: 12px;
 }
+
+/* ---------- 작업 관리 (v0.1.1) ---------- */
+/* 이름 짓기·이름 바꾸기·지우기를 사이드바 안에서 끝낸다.
+   WebView2 에는 window.prompt 가 없으므로 입력칸을 화면에 직접 그린다. */
+
+.work-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.work-actions button { flex: 1 1 auto; }
+
+.work-form { margin-top: 8px; }
+.work-form .field { margin-bottom: 4px; }
+.work-form input[type='text'] { width: 100%; }
+
+.work-warn { color: var(--notice); font-size: 12px; margin: 4px 0 0; }
+
+.work-form.danger-box {
+  padding: 8px;
+  border: 1px solid #f0c4c1;
+  border-radius: 6px;
+  background: var(--bad-bg);
+}
+.work-confirm { font-size: 12px; line-height: 1.6; margin: 0 0 8px; }
+
+/* ---------- 프로그램 정보 · 업데이트 (v0.1.1) ---------- */
+
+/* 설정 화면 맨 위의 한 줄. 부서가 많아도 굴리지 않고 늘 보인다 */
+.about {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.about-label { font-size: 12px; color: var(--muted); }
+.about-version { font-size: 14px; margin-right: 4px; }
+.about-msg { font-size: 13px; }
+.about-msg.bad { color: var(--bad); }
+.about .note { margin: 0; }

@@ -1,7 +1,7 @@
 {
   "name": "afterschool-purchase-helper",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,9 @@
     "check:preview": "node --experimental-strip-types --no-warnings scripts/check-preview.ts",
     "check:review": "node --experimental-strip-types --no-warnings scripts/check-review.ts && node --experimental-strip-types --no-warnings scripts/check-preview.ts",
     "check:trust": "node --experimental-strip-types --no-warnings scripts/check-trust.ts && node --experimental-strip-types --no-warnings scripts/check-review.ts && node --experimental-strip-types --no-warnings scripts/check-preview.ts",
-    "check:model": "node --experimental-strip-types --no-warnings scripts/check-match.ts && node --experimental-strip-types --no-warnings scripts/check-phrase.ts && node --experimental-strip-types --no-warnings scripts/check-allocation.ts && node --experimental-strip-types --no-warnings scripts/check-ime.ts && node --experimental-strip-types --no-warnings scripts/check-trust.ts && node --experimental-strip-types --no-warnings scripts/check-review.ts && node --experimental-strip-types --no-warnings scripts/check-preview.ts"
+    "check:model": "node --experimental-strip-types --no-warnings scripts/check-match.ts && node --experimental-strip-types --no-warnings scripts/check-phrase.ts && node --experimental-strip-types --no-warnings scripts/check-allocation.ts && node --experimental-strip-types --no-warnings scripts/check-ime.ts && node --experimental-strip-types --no-warnings scripts/check-trust.ts && node --experimental-strip-types --no-warnings scripts/check-review.ts && node --experimental-strip-types --no-warnings scripts/check-preview.ts && node --experimental-strip-types --no-warnings scripts/check-work.ts && node --experimental-strip-types --no-warnings scripts/check-update.ts",
+    "check:work": "node --experimental-strip-types --no-warnings scripts/check-work.ts",
+    "check:update": "node --experimental-strip-types --no-warnings scripts/check-update.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

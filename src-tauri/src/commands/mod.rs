@@ -64,6 +64,12 @@ fn create_work(
         .write(|c| crate::domain::work::create_work(c, &title, &school_year, &month, &kind))
 }
 
+/// 작업 이름만 바꾼다. 작업 id 와 딸린 자료는 그대로다.
+#[tauri::command]
+fn rename_work(state: State<AppState>, id: i64, title: String) -> R<()> {
+    state.db.write(|c| crate::domain::work::rename_work(c, id, &title))
+}
+
 #[tauri::command]
 fn delete_work(state: State<AppState>, id: i64) -> R<()> {
     state.db.write(|c| crate::domain::work::delete_work(c, id))
@@ -398,6 +404,7 @@ pub fn handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 'static 
         import_setup,
         list_works,
         create_work,
+        rename_work,
         delete_work,
         get_work,
         register_quotes,

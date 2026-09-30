@@ -40,6 +40,9 @@ export const listWorks = () => invoke<Work[]>('list_works')
 export const getWork = (id: number) => invoke<Work>('get_work', { id })
 export const createWork = (title: string, schoolYear: string, month: string, kind: string) =>
   invoke<number>('create_work', { title, schoolYear, month, kind })
+/** 이름만 바꾼다. 작업 id 와 딸린 자료는 그대로다. */
+export const renameWork = (id: number, title: string) =>
+  invoke<void>('rename_work', { id, title })
 export const deleteWork = (id: number) => invoke<void>('delete_work', { id })
 
 // --- 견적서 ---

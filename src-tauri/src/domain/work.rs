@@ -36,6 +36,18 @@ pub struct Work {
     pub status: String,
 }
 
+/// 작업 이름 다듬기 — **앞뒤 공백을 떼고 비어 있으면 거절한다.**
+///
+/// 만들 때와 이름을 바꿀 때가 같은 규칙을 써야 한다. 한쪽만 막으면
+/// 이름 없는 작업이 목록에 남아 고를 수 없게 된다.
+fn clean_title(title: &str) -> AppResult<&str> {
+    let t = title.trim();
+    if t.is_empty() {
+        return Err(AppError::new("WORK_TITLE_EMPTY", "작업 이름을 입력해 주세요."));
+    }
+    Ok(t)
+}
+
 pub fn create_work(
     conn: &Connection,
     title: &str,
@@ -43,10 +55,7 @@ pub fn create_work(
     month: &str,
     kind: &str,
 ) -> AppResult<i64> {
-    let t = title.trim();
-    if t.is_empty() {
-        return Err(AppError::new("WORK_TITLE_EMPTY", "작업 이름을 입력해 주세요."));
-    }
+    let t = clean_title(title)?;
     let ts = now();
     conn.execute(
         "INSERT INTO work(title, school_year, month, kind, created_at, updated_at, status)
@@ -90,8 +99,38 @@ pub fn touch_work(conn: &Connection, id: i64) -> AppResult<()> {
     Ok(())
 }
 
+/// 작업 이름만 바꾼다.
+///
+/// **작업 id 는 건드리지 않는다.** 견적서·추출 결과·정산 자료·매핑·배분·검증·생성 기록은
+/// 모두 `work_id` 로 매달려 있으므로, id 가 그대로면 딸린 자료도 그대로 남는다.
+pub fn rename_work(conn: &Connection, id: i64, title: &str) -> AppResult<()> {
+    let t = clean_title(title)?;
+    let n = conn.execute(
+        "UPDATE work SET title = ?2, updated_at = ?3 WHERE id = ?1",
+        params![id, t, now()],
+    )?;
+    if n == 0 {
+        return Err(AppError::new("WORK_NOT_FOUND", "작업을 찾을 수 없습니다."));
+    }
+    Ok(())
+}
+
+/// 작업 하나를 지운다. 딸린 자료도 함께 사라진다.
+///
+/// ## 딸린 자료는 SQLite 가 치운다
+/// `work_quote` · `work_quote_item` · `work_settlement_row` · `work_allocation` ·
+/// `work_check` · `work_output` 은 모두 `work(id)` 에 `ON DELETE CASCADE` 로 매여 있다.
+/// 연결을 열 때 `PRAGMA foreign_keys = ON` 을 켜 두므로 (`db::setup_conn`)
+/// 이 한 줄로 그 작업 것만 정확히 치워진다. **다른 작업 자료는 건드리지 않는다.**
+///
+/// ## 원본 파일은 지우지 않는다
+/// 견적서 원본은 경로만 적어 두고 복사하지 않는다 (설계안 14장 15번).
+/// 만들어 둔 Excel 도 사용자가 고른 폴더에 있다. 그 파일들은 그대로 둔다.
 pub fn delete_work(conn: &Connection, id: i64) -> AppResult<()> {
-    conn.execute("DELETE FROM work WHERE id = ?1", [id])?;
+    let n = conn.execute("DELETE FROM work WHERE id = ?1", [id])?;
+    if n == 0 {
+        return Err(AppError::new("WORK_NOT_FOUND", "작업을 찾을 수 없습니다."));
+    }
     Ok(())
 }
 
@@ -1186,3 +1225,7 @@ pub fn quote_source_path(conn: &Connection, quote_id: i64) -> AppResult<String> 
         |r| r.get(0),
     )?)
 }
+
+#[cfg(test)]
+#[path = "work_manage_tests.rs"]
+mod work_manage_tests;

@@ -29,9 +29,15 @@ if (!existsSync(bundleDir)) {
   process.exit(1)
 }
 
-const setup = readdirSync(bundleDir).find((f) => f.endsWith('_x64-setup.exe'))
+// **이 버전의** 설치 파일만 고른다.
+// 전에 만든 판이 폴더에 남아 있으면 첫 번째를 집어 엉뚱한 버전을 릴리스하게 된다.
+const setup = readdirSync(bundleDir).find((f) => f.endsWith(`_${version}_x64-setup.exe`))
 if (!setup) {
-  console.error(`설치 파일을 찾지 못했습니다: ${bundleDir}`)
+  const others = readdirSync(bundleDir).filter((f) => f.endsWith('_x64-setup.exe'))
+  console.error(
+    `v${version} 설치 파일을 찾지 못했습니다: ${bundleDir}` +
+      (others.length ? `\n폴더에 있는 것: ${others.join(', ')}` : ''),
+  )
   process.exit(1)
 }
 const sigFile = `${setup}.sig`

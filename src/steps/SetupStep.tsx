@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as ipc from '../ipc'
 import TextField from '../components/TextField'
+import AboutPanel from '../components/AboutPanel'
 import type { Department, VendorUnit } from '../ipc/types'
 import { defaultPhraseName } from '../lib/phrase'
 
@@ -138,6 +139,10 @@ export default function SetupStep({ onError }: Props) {
         <h2>1. 부서 설정</h2>
         <p>품의 부서 · 정산 별칭 · 거래처 관리 단위를 등록합니다. 셋은 서로 다른 개념입니다.</p>
       </header>
+
+      {/* 프로그램 정보·업데이트 — 부서 설정과 상관없지만 여기가 이 앱의 설정 화면이다.
+          부서가 많으면 아래쪽은 한참 굴려야 닿으므로 맨 위에 둔다. */}
+      <AboutPanel />
 
       <div className="panel">
         <div className="row">
