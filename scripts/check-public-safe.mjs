@@ -57,35 +57,52 @@ function trackedFiles() {
     walk('.')
     return out
   }
-  return execSync('git ls-files', { encoding: 'utf8' }).split('\n').filter(Boolean)
+  // **`-z` 가 반드시 필요하다.** 그냥 `git ls-files` 는 한글처럼 ASCII 가 아닌 이름을
+  // 따옴표에 넣고 8진 이스케이프해서 내놓는다(`core.quotepath` 기본값).
+  // 그 문자열로 파일을 열면 없는 파일이라 그냥 넘어가 버려서 **검사하지 않은 채 통과**한다.
+  // 실제로 이 저장소의 `docs/` 아홉 개가 통째로 빠져 있었다 — 공개 직전에 발견했다.
+  return execSync('git ls-files -z', { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 })
+    .split('\0')
+    .filter(Boolean)
 }
 
 let blocked = 0
 let review = 0
+/** 실제로 내용을 읽은 파일 수 — 목록에 있다고 읽은 것이 아니다 */
+let read = 0
+/** 형식상 읽지 않기로 한 파일 수 (그림·글꼴 등) */
+let skipped = 0
 const files = trackedFiles()
 
 for (const f of files) {
   // 이 검사기 자신은 찾을 낱말 목록을 담고 있으므로 건너뛴다
-  if (f.endsWith('check-public-safe.mjs')) continue
+  if (f.endsWith('check-public-safe.mjs')) { skipped++; continue }
   const lower = f.toLowerCase()
   const ext = lower.slice(lower.lastIndexOf('.'))
 
   if (BLOCK_EXT.includes(ext)) {
     console.error(`✗ 막음  ${f}\n        이 형식은 실제 업무 자료일 수 있어 공개 저장소에 두지 않는다 (${ext})`)
     blocked++
+    skipped++
     continue
   }
-  if (SKIP_READ.includes(ext)) continue
+  if (SKIP_READ.includes(ext)) { skipped++; continue }
+  // 읽지 못한 파일은 **검사하지 못한 파일**이다. 조용히 넘기면 통과한 것처럼 보인다.
   try {
-    if (statSync(f).size > 2_000_000) continue
-  } catch {
+    if (statSync(f).size > 2_000_000) { skipped++; continue }
+  } catch (e) {
+    console.error(`✗ 막음  ${f}\n        파일을 찾지 못해 검사하지 못했습니다 — ${e.code ?? e.message}`)
+    blocked++
     continue
   }
 
   let text
   try {
     text = readFileSync(f, 'utf8')
-  } catch {
+    read++
+  } catch (e) {
+    console.error(`✗ 막음  ${f}\n        읽지 못해 검사하지 못했습니다 — ${e.code ?? e.message}`)
+    blocked++
     continue
   }
 
@@ -108,8 +125,19 @@ for (const f of files) {
 }
 
 console.log('')
-console.log(`검사한 파일 ${files.length}개 ${ALL ? '(폴더 전체)' : '(Git 추적 대상)'}`)
+// **읽은 개수를 따로 센다.** 목록에 있다고 읽은 것이 아니다.
+// 한글 이름을 이스케이프한 경로로 열지 못해 `docs/` 아홉 개가 통째로 빠졌는데,
+// 「검사한 파일 185개」만 찍고 있어서 드러나지 않았다.
+console.log(`목록 ${files.length}개 ${ALL ? '(폴더 전체)' : '(Git 추적 대상)'}`)
+console.log(`  내용을 읽은 파일 ${read}개 · 형식상 건너뛴 파일 ${skipped}개`)
 console.log(`  막음 ${blocked}건 · 살핌 ${review}건`)
+if (read + skipped !== files.length) {
+  console.error(
+    `\n✗ 목록(${files.length})과 읽음(${read})+건너뜀(${skipped})이 맞지 않습니다.` +
+      '\n  검사하지 못한 파일이 있다는 뜻입니다.',
+  )
+  process.exit(1)
+}
 if (blocked > 0) {
   console.error('\n공개하면 안 되는 것이 있습니다. 지우거나 가린 뒤 다시 검사하세요.')
   process.exit(1)
